@@ -27,8 +27,10 @@ import java.net.URI;
 public class EncoderController {
 
     @Autowired
+    private
     EncodeRepository encodeRepository;
     @Autowired
+    private
     UserRepository userRepository;
 
     @PostMapping("/huffman")
