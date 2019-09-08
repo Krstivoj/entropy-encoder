@@ -55,7 +55,6 @@ public class EncoderController {
     }
     @GetMapping("/encoding/all")
     public Page<Encoder> getAllEncodings(Pageable pageable, @CurrentUser UserPrincipal  currentUser){
-        System.out.println(currentUser.getId() + " " + pageable.getPageNumber());
         return encodeRepository.getAllEncodingsForUser(currentUser.getId(),pageable);
     }
 }
