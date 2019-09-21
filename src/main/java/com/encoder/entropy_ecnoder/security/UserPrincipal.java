@@ -1,14 +1,14 @@
 package com.encoder.entropy_ecnoder.security;
 
+import com.encoder.entropy_ecnoder.model.Role;
+import com.encoder.entropy_ecnoder.model.RoleName;
 import com.encoder.entropy_ecnoder.model.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class UserPrincipal implements UserDetails {
@@ -48,6 +48,22 @@ public class UserPrincipal implements UserDetails {
                 user.getPassword(),
                 authorities
         );
+    }
+
+    public static User getUser(UserPrincipal userPrincipal){
+        User user = new User();
+        user.setId(userPrincipal.getId());
+        user.setPassword(userPrincipal.getPassword());
+        user.setUsername(userPrincipal.getUsername());
+        user.setEmail(userPrincipal.getEmail());
+        user.setName(userPrincipal.getName());
+        Set<Role> roles = new HashSet<>();
+        for(GrantedAuthority grantedAuthority : userPrincipal.authorities){
+            Role role = new Role();
+            role.setName(RoleName.valueOf(grantedAuthority.getAuthority()));
+            roles.add(role);
+        }
+        return user;
     }
 
     public Long getId() {

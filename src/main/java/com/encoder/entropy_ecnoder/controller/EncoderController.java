@@ -11,11 +11,12 @@ import com.encoder.entropy_ecnoder.security.CurrentUser;
 import com.encoder.entropy_ecnoder.security.UserPrincipal;
 import com.encoder.entropy_ecnoder.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -53,6 +54,7 @@ public class EncoderController {
         Arithmetic insertedEncode = encodeRepository.save(encode);
         return insertedEncode;
     }
+    @PostAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/encoding/all")
     public Page<Encoder> getAllEncodings(Pageable pageable, @CurrentUser UserPrincipal  currentUser){
         return encodeRepository.getAllEncodingsForUser(currentUser.getId(),pageable);
