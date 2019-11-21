@@ -5,6 +5,7 @@ com/encoder/entropy_ecnoder/model/RoleName.class
 com/encoder/entropy_ecnoder/controller/EncoderController.class
 com/encoder/entropy_ecnoder/repository/UserRepository.class
 com/encoder/entropy_ecnoder/huffman/HuffmanLeaf.class
+com/encoder/entropy_ecnoder/security/CustomMethodSecurityExpressionRoot.class
 com/encoder/entropy_ecnoder/security/JwtAuthentication.class
 com/encoder/entropy_ecnoder/payload/LoginRequest.class
 com/encoder/entropy_ecnoder/arithmetic/ArithmeticEncoder.class
@@ -13,15 +14,19 @@ com/encoder/entropy_ecnoder/payload/UserIdentityAvailability.class
 com/encoder/entropy_ecnoder/utils/Utils.class
 com/encoder/entropy_ecnoder/payload/ApiResponse.class
 com/encoder/entropy_ecnoder/arithmetic/NodeProperty.class
+com/encoder/entropy_ecnoder/security/CustomPermissionEvaluator.class
 com/encoder/entropy_ecnoder/repository/EncodeRepository.class
 com/encoder/entropy_ecnoder/payload/UserProfile.class
+com/encoder/entropy_ecnoder/security/MySecurityExpressionRoot.class
 com/encoder/entropy_ecnoder/config/SpringSecurityAuditAwareImpl.class
 com/encoder/entropy_ecnoder/utils/ConverterHelper.class
 com/encoder/entropy_ecnoder/payload/EncoderRequest.class
+com/encoder/entropy_ecnoder/security/CustomMethodSecurityExpressionHandler.class
 com/encoder/entropy_ecnoder/exception/ResourceNotFoundException.class
 com/encoder/entropy_ecnoder/security/JwtTokenProvider.class
 com/encoder/entropy_ecnoder/huffman/HuffmanCoding.class
 com/encoder/entropy_ecnoder/model/Arithmetic.class
+com/encoder/entropy_ecnoder/config/MethodSecurityConfig.class
 com/encoder/entropy_ecnoder/security/JwtAuthenticationFilter.class
 com/encoder/entropy_ecnoder/model/User.class
 com/encoder/entropy_ecnoder/model/audit/UserDateAudit.class

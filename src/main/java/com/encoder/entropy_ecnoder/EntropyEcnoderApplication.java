@@ -8,6 +8,7 @@ public class EntropyEcnoderApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(EntropyEcnoderApplication.class, args);
+
 	}
 
 }

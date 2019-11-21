@@ -1,7 +1,7 @@
 package com.encoder.entropy_ecnoder.utils;
 
 import com.encoder.entropy_ecnoder.arithmetic.ArithmeticEncoder;
-import com.encoder.entropy_ecnoder.arithmetic.NodeProperty;
+import com.encoder.entropy_ecnoder.arithmetic.Symbol;
 import com.encoder.entropy_ecnoder.huffman.HuffmanCoding;
 import com.encoder.entropy_ecnoder.model.Arithmetic;
 import com.encoder.entropy_ecnoder.model.Huffman;
@@ -95,9 +95,11 @@ public class Utils {
         for (char letter : encoderRequest.getPlainSequence().toCharArray())
             encodedSequence += codeTable.get(String.valueOf(letter));
 
+        final String entropy = getEntropyAsString(encoderRequest.getSymbolProbabilityPairs());
+
         huffman.setEfficient(getFormattedDouble(getEntropy(encoderRequest.getSymbolProbabilityPairs()) / averageCodeLength, 4));
         huffman.setEncodedSequence(encodedSequence);
-        huffman.setEntropy(getEntropy(encoderRequest.getSymbolProbabilityPairs()));
+        huffman.setEntropy(Double.parseDouble(entropy));
         huffman.setSufficient(getFormattedDouble(1 - getEntropy(encoderRequest.getSymbolProbabilityPairs()) / averageCodeLength, 4));
         huffman.setPlainSequence(encoderRequest.getPlainSequence());
         huffman.setUser(user);
@@ -106,38 +108,29 @@ public class Utils {
         huffman.setAverageCodeLength((int) Math.round(averageCodeLength));
         huffman.setEncodedSequenceLength(encodedSequence.length());
         huffman.setEncoderType("huffman");
+
         return huffman;
     }
 
     public static Arithmetic generateArithmeticModel(User user, EncoderRequest encoderRequest) {
         Arithmetic arithmetic = new Arithmetic();
 
-        final ArrayList<NodeProperty> nodeProperties = new ArrayList<>();
+        Map<String, Double> codeTable = encoderRequest.getSymbolProbabilityPairs();
 
-        encoderRequest.getSymbolProbabilityPairs().forEach((symbol, probability) -> {
-            NodeProperty nodeProperty = new NodeProperty();
-            nodeProperty.setSymbol(symbol);
-            nodeProperty.setProbability(probability);
-            nodeProperties.add(nodeProperty);
-        });
+        ArithmeticEncoder arithmeticEncoder = new ArithmeticEncoder(createSymbolList(codeTable),(char)findProbabilityFactor(codeTable));
+        String encodedSequence = arithmeticEncoder.getCompressedAsBinary(encoderRequest.getPlainSequence()) ;
+        int encodedSequenceLength = encodedSequence.length();
 
-        ArithmeticEncoder arithmeticEncoder = new ArithmeticEncoder(nodeProperties);
-        String encodedSequence = arithmeticEncoder.encode(encoderRequest.getPlainSequence()) ;
-        encodedSequence = encodedSequence.contains(".") ?
-                encodedSequence.substring(encodedSequence.lastIndexOf('.')+1)
-                : encodedSequence ;
-        int encodedSequenceLength =
-                encodedSequence.contains(".") ?
-                        encodedSequence.substring(encodedSequence.lastIndexOf('.')+1).length()
-                        : encodedSequence.length();
+        final String entropy = getEntropyAsString(encoderRequest.getSymbolProbabilityPairs());
 
         arithmetic.setEncodedSequence(encodedSequence);
-        arithmetic.setEntropy(getEntropy(encoderRequest.getSymbolProbabilityPairs()));
+        arithmetic.setEntropy(Double.parseDouble(entropy));
         arithmetic.setPlainSequence(encoderRequest.getPlainSequence());
         arithmetic.setUser(user);
         arithmetic.setSymbolProbabilityPairs(encoderRequest.getSymbolProbabilityPairs());
         arithmetic.setEncodedSequenceLength(encodedSequenceLength);
         arithmetic.setEncoderType("arithmetic");
+
         return arithmetic;
     }
 
@@ -151,5 +144,31 @@ public class Utils {
         });
         step[0] = new BigDecimal(getFormattedDouble(step[0].doubleValue(),maxFractionDigits[0]));
         return step[0].compareTo(BigDecimal.ONE);
+    }
+
+    public static ArrayList<Symbol> createSymbolList(Map<String, Double> codeTable) {
+        final ArrayList<Symbol> symbols = new ArrayList<>() ;
+        int coeficient = findProbabilityFactor(codeTable);
+        int step = 0 ;
+        int stepValue ;
+        for (Map.Entry<String, Double> stringDoubleEntry : codeTable.entrySet()) {
+            stepValue = step + (int)(stringDoubleEntry.getValue()*coeficient) ;
+            symbols.add(new Symbol(stringDoubleEntry.getKey().charAt(0),(char)step,(char)stepValue));
+            step = stepValue ;
+        }
+        return symbols;
+    }
+
+    public static int findProbabilityFactor (Map<String, Double> codeTable) {
+        int i ;
+        double minValue = 1;
+        for (Map.Entry<String, Double> stringDoubleEntry : codeTable.entrySet()) {
+            if (stringDoubleEntry.getValue() < minValue) {
+                minValue = stringDoubleEntry.getValue();
+            }
+        }
+        String stringMinValue = String.valueOf(minValue);
+        i = (int) Math.pow(10,stringMinValue.substring(1).length());
+        return i;
     }
 }

@@ -1,128 +1,146 @@
 package com.encoder.entropy_ecnoder.arithmetic;
 
-import com.encoder.entropy_ecnoder.utils.Utils;
-
+import java.io.CharArrayWriter;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.List;
 
 public class ArithmeticEncoder {
 
-    private double accumulative;
-    private ArrayList<Node> nodes;
-    private ArrayList<NodeProperty> nodeProperties;
-    private Interval interval;
+    private char low;
+    private char high;
+    private char underflow_bits;
+    private char current_output_char;
+    private char output_mask;
+    private char scale;
 
-    public ArithmeticEncoder(ArrayList<NodeProperty> charactersProbabilities) {
-        super();
-        this.nodeProperties = charactersProbabilities;
-        nodes = new ArrayList<>();
-        accumulative = 1.0;
-        this.interval = new Interval();
-        Collections.sort(nodeProperties);
-        init();
+    private List<Symbol> codes;
+    private CharArrayWriter output_buffer;
+
+    public ArithmeticEncoder() {
+        this.codes = new ArrayList<>();
+        this.scale = 1 ;
     }
 
-    private void init() {
-        for (NodeProperty nodeProperty : nodeProperties) {
-            Node node = new Node();
-            node.setNodeProperty(nodeProperty);
-            node.setHigh(accumulative);
-            node.setLow(accumulative - nodeProperty.getProbability());
-            nodes.add(node);
-            accumulative -= nodeProperty.getProbability();
+    public ArithmeticEncoder(ArrayList<Symbol> symbols, char scale) {
+        this.codes = symbols ;
+        this.scale = scale;
+    }
+
+    public CharArrayWriter compress(String input) {
+        int i;
+        char c;
+        Symbol s = new Symbol();
+
+        initializeOutputBitStream();
+        initializeArithmeticEncoder();
+        for (i = 0; i < input.toCharArray().length; i++) {
+            c = input.toCharArray()[i];
+            convertCharToSymbol(c, s);
+            encodeSymbol(s);
+            if (c == '\0')
+                break;
+        }
+        flushArithmeticEncoder();
+        flushOutputBitStream();
+        return output_buffer;
+    }
+
+    private void initializeArithmeticEncoder() {
+        low = (char) 0;
+        high = (char) 0xffff;
+        underflow_bits = (char) 0;
+    }
+
+    private void flushArithmeticEncoder() {
+        outputBit((char) (low & (0x4000)));
+        underflow_bits++;
+        while (underflow_bits-- > 0)
+            outputBit((char) (~low & (char) 0x4000));
+    }
+
+    private void initializeOutputBitStream() {
+        output_buffer = new CharArrayWriter();
+        current_output_char = (char) 0;
+        output_mask = (char) 0x8000;
+    }
+
+    private void outputBit(char bit) {
+        if (bit > (char) 0)
+            current_output_char = (char) (current_output_char | output_mask);
+        output_mask >>= (char) 1;
+        if (output_mask == 0) {
+            output_mask = (char) 0x8000;
+            output_buffer.write(current_output_char);
+            current_output_char = (char) 0;
         }
     }
 
-    public String encode(final String plainText) {
-
-        char[] chars = plainText.toCharArray();
-        Node node;
-
-        int precision = 0;
-        if(chars.length == 1 ){
-            node = getNodeByName(String.valueOf(chars[0])) ;
-            String str = "" ;
-            if (node.getHigh() == 1.0)
-                str = "1.0";
-            else if(node.getLow() == 0.0)
-                str = "0.0" ;
-            else str= "" ;
-
-            if (!str.isEmpty())
-                return str;
-        }
-
-        for (char ch : chars) {
-            node = getNodeByName(String.valueOf(ch));
-            precision += (int) Math.ceil(-Utils.log2(node.getNodeProperty().getProbability()));
-            this.interval.setHighRange(node.getHigh());
-            this.interval.setLowRange(node.getLow());
-
-            this.accumulative = this.interval.getHighRange();
-            refreshNodesState();
-        }
-
-        return generateBinaryString(interval.getLowRange(),interval.getHighRange(), precision);
+    private void flushOutputBitStream() {
+        output_buffer.write(current_output_char);
     }
 
-    private String generateBinaryString(double low,double high,int precision) {
-
-        double delta1 = 0.0;
-        double delta2 = 0.0;
-        String current_string = "0.";
-        String current1 ;
-        String current2 ;
-        double currentDec1;
-        double currentDec2;
-
-        while(current_string.length() <= precision * 2) {
-
-            current1 = current_string + "1";
-            current2 = current_string + "0" ;
-
-            currentDec1 = Utils.convertToDecimal(current1);
-            currentDec2 = Utils.convertToDecimal(current2);
-
-            delta1 = high - currentDec1 ;
-            delta2 = low - currentDec2;
-
-            current_string = (delta1 >= 0 && delta1 < delta2) || (delta2 >= 0 && delta2 < delta1) ? current1 : current2;
-
-        }
-        System.out.println("[ " + low + " , " + high + " ]");
-        return current_string.substring(0,current_string.lastIndexOf('1')+1);
-    }
-
-    private void refreshNodesState() {
-
-        Node prevNode = null;
-
-        for (int i = nodes.size() - 1; i >= 0; i--) {
-            Node currentNode = nodes.get(i);
-            if (i == nodes.size() - 1)
-                currentNode.setLow(this.interval.getLowRange());
-            else
-                currentNode.setLow(prevNode.getHigh());
-            if (i == 0)
-                currentNode.setHigh(this.interval.getHighRange());
-            else
-                currentNode.setHigh(currentNode.getLow() + this.interval.getRange() * currentNode.getNodeProperty().getProbability());
-            prevNode = currentNode;
-
-        }
-    }
-
-    private Node getNodeByName(String valueOf) {
-        Node node = new Node();
-        node.getNodeProperty().setSymbol(valueOf);
-
-        for (Node node1 : nodes) {
-            if (node1.getNodeProperty().getSymbol().equals(valueOf)) {
-                node.setHigh(node1.getHigh());
-                node.setLow(node1.getLow());
-                node.getNodeProperty().setProbability(node1.getNodeProperty().getProbability());
+    private void convertCharToSymbol(char c, Symbol s) {
+        int i = 0;
+        for (; ; ) {
+            if (c == codes.get(i).symbol) {
+                s.symbol = c;
+                s.low = codes.get(i).low;
+                s.high = codes.get(i).high;
+                return;
             }
+            if (i == (codes.size() - 1))
+                System.out.println("Trying to encode a char not in the table");
+            i++;
         }
-        return node;
+    }
+
+    private void encodeSymbol(Symbol s) {
+        long range;
+
+        range = (long) (high - low) + 1;
+
+        high = (char) (low + (char) ((range * s.high) / scale) - (char) 1);
+
+        low = (char) (low + (char) ((range * s.low) / scale));
+
+        for (; ; ) {
+            if (((char) (high & (char) 0x8000)) == ((char) (low & (char) 0x8000))) {
+                outputBit((char) (high & (char) 0x8000));
+                while (underflow_bits > 0) {
+                    outputBit((char) (~high & (char) 0x8000));
+                    underflow_bits--;
+                }
+
+            }
+            else if ((((char) (low & (char) 0x4000) != (char) 0)) && (((char) (high & (char) 0x4000)) == (char) 0)) {
+                underflow_bits++;
+                low &= (char) 0x3fff;
+                high |= (char) 0x4000;
+            } else {
+                return;
+            }
+            low = (char) (low << (char) 1);
+            high = (char) (high << (char) 1);
+            high = (char) (high | (char) 1);
+        }
+    }
+
+    private static String getEffectiveBinary(String hex) {
+        if (hex.length() > 2) {
+            String firstPart = hex.substring(0, 2);
+            String secondPart = hex.substring(2);
+            return Integer.toBinaryString(Integer.parseInt(firstPart, 16)) + Integer.toBinaryString(Integer.parseInt(secondPart, 16));
+        }else
+            return Integer.toBinaryString(Integer.parseInt(hex, 16));
+    }
+
+    public String getCompressedAsBinary(String text) {
+        CharArrayWriter baos = compress(text);
+        StringBuilder binaryRepresentation = new StringBuilder();
+        for (char b : baos.toCharArray()) {
+            binaryRepresentation.append(getEffectiveBinary(Integer.toHexString((int)b)));
+        }
+        String retVal =  binaryRepresentation.toString() ;
+        return retVal.substring(0,retVal.lastIndexOf('1')+1);
     }
 }

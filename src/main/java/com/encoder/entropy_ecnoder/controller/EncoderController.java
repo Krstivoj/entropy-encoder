@@ -16,7 +16,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -37,24 +36,32 @@ public class EncoderController {
     @PostMapping("/huffman")
     public ResponseEntity<?> huffmanEncode(@Valid @RequestBody EncoderRequest encoderRequest, @CurrentUser UserPrincipal currentUser){
         if (Utils.isEncoderRequestValid(encoderRequest) == 0) {
-            Encoder encoder = Utils.generateHuffmanModel(userRepository.getOne(currentUser.getId()), encoderRequest);
+            Encoder encoder = Utils.generateHuffmanModel(UserPrincipal.getUser(currentUser), encoderRequest);
             Encoder insertedEncoder = encodeRepository.save(encoder);
             URI location = ServletUriComponentsBuilder
                     .fromCurrentContextPath().path("/huffman").build().toUri();
-
             return ResponseEntity.created(location).body(insertedEncoder);
         }else {
-            return new ResponseEntity(new ApiResponse(false, "Sum of probabilities per symbol must be equal to 1.0"),
+            final ResponseEntity responseEntity = new ResponseEntity(new ApiResponse(false, "Sum of probabilities per symbol must be equal to 1.0"),
                     HttpStatus.BAD_REQUEST);
+            return responseEntity;
         }
     }
     @PostMapping("/arithmetic")
-    public Arithmetic arithmeticEncode(@Valid @RequestBody EncoderRequest encoderRequest,@CurrentUser UserPrincipal currentUser){
-        Arithmetic encode = Utils.generateArithmeticModel(userRepository.getOne(currentUser.getId()),encoderRequest);
-        Arithmetic insertedEncode = encodeRepository.save(encode);
-        return insertedEncode;
+    public ResponseEntity<?> arithmeticEncode(@Valid @RequestBody EncoderRequest encoderRequest,@CurrentUser UserPrincipal currentUser){
+        if (Utils.isEncoderRequestValid(encoderRequest) == 0) {
+            Arithmetic encode = Utils.generateArithmeticModel(UserPrincipal.getUser(currentUser), encoderRequest);
+            Arithmetic insertedEncode = encodeRepository.save(encode);
+            URI location = ServletUriComponentsBuilder
+                    .fromCurrentContextPath().path("/huffman").build().toUri();
+            return ResponseEntity.created(location).body(insertedEncode);
+        }
+        else {
+            final ResponseEntity responseEntity = new ResponseEntity(new ApiResponse(false, "Sum of probabilities per symbol must be equal to 1.0"),
+                    HttpStatus.BAD_REQUEST);
+            return responseEntity;
+        }
     }
-    @PostAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/encoding/all")
     public Page<Encoder> getAllEncodings(Pageable pageable, @CurrentUser UserPrincipal  currentUser){
         return encodeRepository.getAllEncodingsForUser(currentUser.getId(),pageable);
