@@ -6,20 +6,22 @@ import com.encoder.entropy_ecnoder.huffman.HuffmanCoding;
 import com.encoder.entropy_ecnoder.model.Arithmetic;
 import com.encoder.entropy_ecnoder.model.Huffman;
 import com.encoder.entropy_ecnoder.model.User;
-import com.encoder.entropy_ecnoder.payload.EncoderRequest;
+import com.encoder.entropy_ecnoder.payload.EncoderDecoderRequest;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Map;
 
+@Component
 public class Utils {
 
-    public static double log2(double a) {
+    public double log2(double a) {
         return Math.log(a) / Math.log(2);
     }
 
-    public static double getEntropy(Map<String, Double> charProbabilityPairs) {
+    public double getEntropy(Map<String, Double> charProbabilityPairs) {
         final Double[] retVal = {0.0};
         charProbabilityPairs.forEach((symbol, probability) -> {
             retVal[0] += (probability * log2(probability));
@@ -27,11 +29,11 @@ public class Utils {
         return (-1) * retVal[0];
     }
 
-    private static String getEntropyAsString(Map<String, Double> charProbabilityPairs) {
+    private String getEntropyAsString(Map<String, Double> charProbabilityPairs) {
         return getFormattedDouble(getEntropy(charProbabilityPairs), 4);
     }
 
-    public static double getAverageCodeLength(Map<String, String> codeTable, Map<String, Double> symbolProbabilityPairs) {
+    public double getAverageCodeLength(Map<String, String> codeTable, Map<String, Double> symbolProbabilityPairs) {
         final Double[] averageCodeLength = {0.0};
         for (Map.Entry<String, Double> entry : symbolProbabilityPairs.entrySet()) {
             String symbol = entry.getKey();
@@ -41,70 +43,37 @@ public class Utils {
         return averageCodeLength[0];
     }
 
-    public static String getFormattedDouble(double number, int fractionDigits) {
+    public String getFormattedDouble(double number, int fractionDigits) {
         DecimalFormat decimalFormat = new DecimalFormat();
         decimalFormat.setMaximumFractionDigits(fractionDigits);
         return decimalFormat.format(number);
     }
 
-    public static double convertToDecimal(String binaryNumber) {
-
-        double decimalNumber;
-
-        if (binaryNumber.contains(".")) {
-            String[] digits = binaryNumber.split("\\.");
-
-            int beforeDecimalDot = Integer.parseInt(digits[0], 2);
-            double afterDecimalDot = latterPart(digits[1]);
-            decimalNumber = beforeDecimalDot + afterDecimalDot;
-
-        } else {
-            decimalNumber = Integer.parseInt(binaryNumber, 2);
-        }
-        return decimalNumber;
-    }
-
-    private static double latterPart(String number) {
-
-        double sum = 0;
-        int length = number.length();
-
-        for (int i = 0; i < length; i++) {
-            int e = -i - 1;
-            char multiplication = number.charAt(i);
-            int num = Integer.parseInt(String.valueOf(multiplication));
-            double num1 = num * Math.pow(2, e);
-
-            sum = sum + num1;
-        }
-        return sum;
-    }
-
-    public static Huffman generateHuffmanModel(User user, EncoderRequest encoderRequest) {
+    public Huffman generateHuffmanModel(User user, EncoderDecoderRequest encoderDecoderRequest) {
         Huffman huffman = new Huffman();
 
         HuffmanCoding huffmanCoding = new HuffmanCoding();
 
         Map<String, String> codeTable = huffmanCoding.createHuffmanCodes(
-                huffmanCoding.buildTree(encoderRequest.getSymbolProbabilityPairs()));
+                huffmanCoding.buildTree(encoderDecoderRequest.getSymbolProbabilityPairs()));
 
-        double averageCodeLength = getAverageCodeLength(codeTable, encoderRequest.getSymbolProbabilityPairs());
+        double averageCodeLength = getAverageCodeLength(codeTable, encoderDecoderRequest.getSymbolProbabilityPairs());
 
-        String encodedSequence = "";
+        StringBuilder encodedSequence = new StringBuilder();
 
-        for (char letter : encoderRequest.getPlainSequence().toCharArray())
-            encodedSequence += codeTable.get(String.valueOf(letter));
+        for (char letter : encoderDecoderRequest.getSequence().toCharArray())
+            encodedSequence.append(codeTable.get(String.valueOf(letter)));
 
-        final String entropy = getEntropyAsString(encoderRequest.getSymbolProbabilityPairs());
+        final String entropy = getEntropyAsString(encoderDecoderRequest.getSymbolProbabilityPairs());
 
-        huffman.setEfficient(getFormattedDouble(getEntropy(encoderRequest.getSymbolProbabilityPairs()) / averageCodeLength, 4));
-        huffman.setEncodedSequence(encodedSequence);
+        huffman.setEfficient(getFormattedDouble(getEntropy(encoderDecoderRequest.getSymbolProbabilityPairs()) / averageCodeLength, 4));
+        huffman.setEncodedSequence(encodedSequence.toString());
         huffman.setEntropy(Double.parseDouble(entropy));
-        huffman.setSufficient(getFormattedDouble(1 - getEntropy(encoderRequest.getSymbolProbabilityPairs()) / averageCodeLength, 4));
-        huffman.setPlainSequence(encoderRequest.getPlainSequence());
+        huffman.setSufficient(getFormattedDouble(1 - getEntropy(encoderDecoderRequest.getSymbolProbabilityPairs()) / averageCodeLength, 4));
+        huffman.setPlainSequence(encoderDecoderRequest.getSequence());
         huffman.setUser(user);
         huffman.setSymbolCodePairs(codeTable);
-        huffman.setSymbolProbabilityPairs(encoderRequest.getSymbolProbabilityPairs());
+        huffman.setSymbolProbabilityPairs(encoderDecoderRequest.getSymbolProbabilityPairs());
         huffman.setAverageCodeLength((int) Math.round(averageCodeLength));
         huffman.setEncodedSequenceLength(encodedSequence.length());
         huffman.setEncoderType("huffman");
@@ -112,32 +81,32 @@ public class Utils {
         return huffman;
     }
 
-    public static Arithmetic generateArithmeticModel(User user, EncoderRequest encoderRequest) {
+    public Arithmetic generateArithmeticModel(User user, EncoderDecoderRequest encoderDecoderRequest) {
         Arithmetic arithmetic = new Arithmetic();
 
-        Map<String, Double> codeTable = encoderRequest.getSymbolProbabilityPairs();
+        Map<String, Double> codeTable = encoderDecoderRequest.getSymbolProbabilityPairs();
 
         ArithmeticEncoder arithmeticEncoder = new ArithmeticEncoder(createSymbolList(codeTable),(char)findProbabilityFactor(codeTable));
-        String encodedSequence = arithmeticEncoder.getCompressedAsBinary(encoderRequest.getPlainSequence()) ;
+        String encodedSequence = arithmeticEncoder.getCompressedAsBinary(encoderDecoderRequest.getSequence()) ;
         int encodedSequenceLength = encodedSequence.length();
 
-        final String entropy = getEntropyAsString(encoderRequest.getSymbolProbabilityPairs());
+        final String entropy = getEntropyAsString(encoderDecoderRequest.getSymbolProbabilityPairs());
 
         arithmetic.setEncodedSequence(encodedSequence);
         arithmetic.setEntropy(Double.parseDouble(entropy));
-        arithmetic.setPlainSequence(encoderRequest.getPlainSequence());
+        arithmetic.setPlainSequence(encoderDecoderRequest.getSequence());
         arithmetic.setUser(user);
-        arithmetic.setSymbolProbabilityPairs(encoderRequest.getSymbolProbabilityPairs());
+        arithmetic.setSymbolProbabilityPairs(encoderDecoderRequest.getSymbolProbabilityPairs());
         arithmetic.setEncodedSequenceLength(encodedSequenceLength);
         arithmetic.setEncoderType("arithmetic");
 
         return arithmetic;
     }
 
-    public static int isEncoderRequestValid(EncoderRequest encoderRequest) {
+    public int validateRequest(EncoderDecoderRequest encoderDecoderRequest) {
         final BigDecimal[] step = {new BigDecimal("0.0")};
         final Integer[] maxFractionDigits = {0};
-        encoderRequest.getSymbolProbabilityPairs().forEach((symbol, probability) -> {
+        encoderDecoderRequest.getSymbolProbabilityPairs().forEach((symbol, probability) -> {
             if (String.valueOf(probability).substring(String.valueOf(probability).lastIndexOf('.')).length() > maxFractionDigits[0])
                 maxFractionDigits[0] = String.valueOf(probability).substring(String.valueOf(probability).lastIndexOf('.')).length();
             step[0] = step[0].add(new BigDecimal(probability));
@@ -146,20 +115,20 @@ public class Utils {
         return step[0].compareTo(BigDecimal.ONE);
     }
 
-    public static ArrayList<Symbol> createSymbolList(Map<String, Double> codeTable) {
+    public ArrayList<Symbol> createSymbolList(Map<String, Double> codeTable) {
         final ArrayList<Symbol> symbols = new ArrayList<>() ;
-        int coeficient = findProbabilityFactor(codeTable);
+        int coefficient = findProbabilityFactor(codeTable);
         int step = 0 ;
         int stepValue ;
         for (Map.Entry<String, Double> stringDoubleEntry : codeTable.entrySet()) {
-            stepValue = step + (int)(stringDoubleEntry.getValue()*coeficient) ;
+            stepValue = step + (int)(stringDoubleEntry.getValue()*coefficient) ;
             symbols.add(new Symbol(stringDoubleEntry.getKey().charAt(0),(char)step,(char)stepValue));
             step = stepValue ;
         }
         return symbols;
     }
 
-    public static int findProbabilityFactor (Map<String, Double> codeTable) {
+    private int findProbabilityFactor(Map<String, Double> codeTable) {
         int i ;
         double minValue = 1;
         for (Map.Entry<String, Double> stringDoubleEntry : codeTable.entrySet()) {
@@ -168,7 +137,7 @@ public class Utils {
             }
         }
         String stringMinValue = String.valueOf(minValue);
-        i = (int) Math.pow(10,stringMinValue.substring(1).length());
+        i = (int) Math.pow(10,stringMinValue.substring(1).length()-1);
         return i;
     }
 }

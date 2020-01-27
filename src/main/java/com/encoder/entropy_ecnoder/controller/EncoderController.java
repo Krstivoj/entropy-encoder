@@ -1,14 +1,13 @@
 package com.encoder.entropy_ecnoder.controller;
 
-
-import com.encoder.entropy_ecnoder.model.Arithmetic;
 import com.encoder.entropy_ecnoder.model.Encoder;
-import com.encoder.entropy_ecnoder.payload.ApiResponse;
-import com.encoder.entropy_ecnoder.payload.EncoderRequest;
+import com.encoder.entropy_ecnoder.payload.APIResponse;
+import com.encoder.entropy_ecnoder.payload.EncoderDecoderRequest;
 import com.encoder.entropy_ecnoder.repository.EncodeRepository;
 import com.encoder.entropy_ecnoder.repository.UserRepository;
 import com.encoder.entropy_ecnoder.security.CurrentUser;
 import com.encoder.entropy_ecnoder.security.UserPrincipal;
+import com.encoder.entropy_ecnoder.service.CodingService;
 import com.encoder.entropy_ecnoder.utils.Utils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -28,38 +27,51 @@ public class EncoderController {
 
     @Autowired
     private
-    EncodeRepository encodeRepository;
-    @Autowired
-    private
     UserRepository userRepository;
+    @Autowired
+    private Utils utils;
+    @Autowired
+    private CodingService codingService;
+    @Autowired
+    private EncodeRepository encodeRepository;
 
     @PostMapping("/huffman")
-    public ResponseEntity<?> huffmanEncode(@Valid @RequestBody EncoderRequest encoderRequest, @CurrentUser UserPrincipal currentUser){
-        if (Utils.isEncoderRequestValid(encoderRequest) == 0) {
-            Encoder encoder = Utils.generateHuffmanModel(UserPrincipal.getUser(currentUser), encoderRequest);
-            Encoder insertedEncoder = encodeRepository.save(encoder);
-            URI location = ServletUriComponentsBuilder
-                    .fromCurrentContextPath().path("/huffman").build().toUri();
-            return ResponseEntity.created(location).body(insertedEncoder);
+    public ResponseEntity<?> huffmanEncode(@Valid @RequestBody EncoderDecoderRequest encoderDecoderRequest,
+                                           @CurrentUser UserPrincipal currentUser){
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentContextPath().path("/huffman").build().toUri();
+        if (this.utils.validateRequest(encoderDecoderRequest) == 0) {
+            return ResponseEntity
+                    .created(location)
+                    .body(codingService.encodeHuffman(currentUser, encoderDecoderRequest));
         }else {
-            final ResponseEntity responseEntity = new ResponseEntity(new ApiResponse(false, "Sum of probabilities per symbol must be equal to 1.0"),
-                    HttpStatus.BAD_REQUEST);
-            return responseEntity;
+            final String message = "Sum of probabilities per symbol must be equal to 1.0";
+            return new ResponseEntity(
+                    new APIResponse(false, message),
+                    HttpStatus.BAD_REQUEST
+            );
         }
     }
     @PostMapping("/arithmetic")
-    public ResponseEntity<?> arithmeticEncode(@Valid @RequestBody EncoderRequest encoderRequest,@CurrentUser UserPrincipal currentUser){
-        if (Utils.isEncoderRequestValid(encoderRequest) == 0) {
-            Arithmetic encode = Utils.generateArithmeticModel(UserPrincipal.getUser(currentUser), encoderRequest);
-            Arithmetic insertedEncode = encodeRepository.save(encode);
-            URI location = ServletUriComponentsBuilder
-                    .fromCurrentContextPath().path("/huffman").build().toUri();
-            return ResponseEntity.created(location).body(insertedEncode);
+    public ResponseEntity<?> arithmeticEncode(@Valid @RequestBody EncoderDecoderRequest encoderDecoderRequest,
+                                              @CurrentUser UserPrincipal currentUser){
+
+        URI location = ServletUriComponentsBuilder
+                        .fromCurrentContextPath()
+                        .path("/arithmetic")
+                        .build()
+                        .toUri();
+        if (this.utils.validateRequest(encoderDecoderRequest) == 0) {
+            return ResponseEntity
+                    .created(location)
+                    .body(codingService.encodeArithmetic(currentUser, encoderDecoderRequest));
         }
         else {
-            final ResponseEntity responseEntity = new ResponseEntity(new ApiResponse(false, "Sum of probabilities per symbol must be equal to 1.0"),
-                    HttpStatus.BAD_REQUEST);
-            return responseEntity;
+            final String message = "Sum of probabilities per symbol must be equal to 1.0";
+            return new ResponseEntity(
+                    new APIResponse(false, message),
+                    HttpStatus.BAD_REQUEST
+            );
         }
     }
     @GetMapping("/encoding/all")

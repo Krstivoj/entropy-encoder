@@ -4,14 +4,14 @@ import com.encoder.entropy_ecnoder.exception.AppException;
 import com.encoder.entropy_ecnoder.model.Role;
 import com.encoder.entropy_ecnoder.model.RoleName;
 import com.encoder.entropy_ecnoder.model.User;
-import com.encoder.entropy_ecnoder.payload.ApiResponse;
-import com.encoder.entropy_ecnoder.payload.JwtAuthenticationResponse;
+import com.encoder.entropy_ecnoder.payload.APIResponse;
+import com.encoder.entropy_ecnoder.payload.JWTAuthenticationResponse;
 import com.encoder.entropy_ecnoder.payload.LoginRequest;
 import com.encoder.entropy_ecnoder.payload.SignUpRequest;
 import com.encoder.entropy_ecnoder.repository.RoleRepository;
 import com.encoder.entropy_ecnoder.repository.UserRepository;
 import com.encoder.entropy_ecnoder.security.CurrentUser;
-import com.encoder.entropy_ecnoder.security.JwtTokenProvider;
+import com.encoder.entropy_ecnoder.security.JWTTokenProvider;
 
 import com.encoder.entropy_ecnoder.security.UserPrincipal;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +52,7 @@ public class AuthController {
 
     @Autowired
     private
-    JwtTokenProvider tokenProvider;
+    JWTTokenProvider tokenProvider;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -67,18 +67,18 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = tokenProvider.generateToken(authentication);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
+        return ResponseEntity.ok(new JWTAuthenticationResponse(jwt));
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
         if(userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return new ResponseEntity<>(new ApiResponse(false, "Username is already taken!"),
+            return new ResponseEntity<>(new APIResponse(false, "Username is already taken!"),
                     HttpStatus.BAD_REQUEST);
         }
 
         if(userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return new ResponseEntity<>(new ApiResponse(false, "Email Address already in use!"),
+            return new ResponseEntity<>(new APIResponse(false, "Email Address already in use!"),
                     HttpStatus.BAD_REQUEST);
         }
 
@@ -98,14 +98,14 @@ public class AuthController {
                 .fromCurrentContextPath().path("/users/{username}")
                 .buildAndExpand(result.getUsername()).toUri();
 
-        return ResponseEntity.created(location).body(new ApiResponse(true, "User registered successfully"));
+        return ResponseEntity.created(location).body(new APIResponse(true, "User registered successfully"));
     }
     @PostMapping("/changepassword")
     public ResponseEntity<?> updatePassword(@RequestBody Map<String,String> requestParams, @CurrentUser UserPrincipal userPrincipal) {
 
         User user = userRepository.findByUsername(userPrincipal.getUsername()).get();
         if (!passwordEncoder.matches(requestParams.get("oldPassword"),user.getPassword())) {
-            return new ResponseEntity<>(new ApiResponse(false, "Old password did not matches!"),
+            return new ResponseEntity<>(new APIResponse(false, "Old password did not matches!"),
                     HttpStatus.NOT_ACCEPTABLE);
         }
         else{
@@ -114,7 +114,7 @@ public class AuthController {
                     .buildAndExpand(user.getUsername()).toUri();
             user.setPassword(passwordEncoder.encode(requestParams.get("newPassword")));
             User save = userRepository.save(user);
-            return ResponseEntity.created(location).body(new ApiResponse(true, "Password changed successfully"));
+            return ResponseEntity.created(location).body(new APIResponse(true, "Password changed successfully"));
         }
     }
     @GetMapping("/profile")

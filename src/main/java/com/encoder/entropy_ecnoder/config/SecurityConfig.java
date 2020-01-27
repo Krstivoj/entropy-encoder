@@ -1,12 +1,11 @@
 package com.encoder.entropy_ecnoder.config;
 
 import com.encoder.entropy_ecnoder.security.CustomUserDetailsService;
-import com.encoder.entropy_ecnoder.security.JwtAuthentication;
-import com.encoder.entropy_ecnoder.security.JwtAuthenticationFilter;
+import com.encoder.entropy_ecnoder.security.JWTAuthentication;
+import com.encoder.entropy_ecnoder.security.JWTAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -26,11 +25,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     CustomUserDetailsService customUserDetailsService;
 
     @Autowired
-    private JwtAuthentication unauthorizedHandler;
+    private JWTAuthentication unauthorizedHandler;
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter();
+    public JWTAuthenticationFilter jwtAuthenticationFilter() {
+        return new JWTAuthenticationFilter();
     }
 
     @Override
@@ -79,12 +78,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         .permitAll()
                     .antMatchers("/api/user/checkUsernameAvailability", "/api/user/checkEmailAvailability")
                         .permitAll()
-                    .antMatchers(HttpMethod.GET,"/api/users/**")
-                        .permitAll()
                     .anyRequest()
                         .authenticated();
-
-        // Add our custom JWT security filter
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
     }

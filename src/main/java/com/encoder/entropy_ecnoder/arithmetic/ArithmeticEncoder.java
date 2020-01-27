@@ -16,17 +16,12 @@ public class ArithmeticEncoder {
     private List<Symbol> codes;
     private CharArrayWriter output_buffer;
 
-    public ArithmeticEncoder() {
-        this.codes = new ArrayList<>();
-        this.scale = 1 ;
-    }
-
     public ArithmeticEncoder(ArrayList<Symbol> symbols, char scale) {
         this.codes = symbols ;
         this.scale = scale;
     }
 
-    public CharArrayWriter compress(String input) {
+    private CharArrayWriter compress(String input) {
         int i;
         char c;
         Symbol s = new Symbol();
@@ -82,14 +77,14 @@ public class ArithmeticEncoder {
     private void convertCharToSymbol(char c, Symbol s) {
         int i = 0;
         for (; ; ) {
-            if (c == codes.get(i).symbol) {
-                s.symbol = c;
-                s.low = codes.get(i).low;
-                s.high = codes.get(i).high;
+            if (c == codes.get(i).getSymbol()) {
+                s.setSymbol(c);
+                s.setLow(codes.get(i).getLow());
+                s.setHigh(codes.get(i).getHigh());
                 return;
             }
             if (i == (codes.size() - 1))
-                System.out.println("Trying to encode a char not in the table");
+                System.err.println("Trying to encode a char not in the table");
             i++;
         }
     }
@@ -99,9 +94,9 @@ public class ArithmeticEncoder {
 
         range = (long) (high - low) + 1;
 
-        high = (char) (low + (char) ((range * s.high) / scale) - (char) 1);
+        high = (char) (low + (char) ((range * s.getHigh()) / scale) - (char) 1);
 
-        low = (char) (low + (char) ((range * s.low) / scale));
+        low = (char) (low + (char) ((range * s.getLow()) / scale));
 
         for (; ; ) {
             if (((char) (high & (char) 0x8000)) == ((char) (low & (char) 0x8000))) {
@@ -129,16 +124,18 @@ public class ArithmeticEncoder {
         if (hex.length() > 2) {
             String firstPart = hex.substring(0, 2);
             String secondPart = hex.substring(2);
-            return Integer.toBinaryString(Integer.parseInt(firstPart, 16)) + Integer.toBinaryString(Integer.parseInt(secondPart, 16));
+            String binaryFirstPart = Integer.toBinaryString(Integer.parseInt(firstPart, 16));
+            String binarySecondPart = Integer.toBinaryString(Integer.parseInt(secondPart, 16));
+            return String.format("%8s", binaryFirstPart).replaceAll(" ", "0") + String.format("%8s", binarySecondPart).replaceAll(" ", "0");
         }else
-            return Integer.toBinaryString(Integer.parseInt(hex, 16));
+            return String.format("%8s",Integer.toBinaryString(Integer.parseInt(hex, 16))).replaceAll(" ", "0");
     }
 
     public String getCompressedAsBinary(String text) {
-        CharArrayWriter baos = compress(text);
+        CharArrayWriter charArrayWriter = compress(text);
         StringBuilder binaryRepresentation = new StringBuilder();
-        for (char b : baos.toCharArray()) {
-            binaryRepresentation.append(getEffectiveBinary(Integer.toHexString((int)b)));
+        for (char c : charArrayWriter.toCharArray()) {
+            binaryRepresentation.append(getEffectiveBinary(Integer.toHexString((int)c)));
         }
         String retVal =  binaryRepresentation.toString() ;
         return retVal.substring(0,retVal.lastIndexOf('1')+1);
