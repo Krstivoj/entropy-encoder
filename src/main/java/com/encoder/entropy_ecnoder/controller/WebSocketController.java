@@ -19,7 +19,6 @@ public class WebSocketController {
     public String processMessageFromClient(@Payload String message, SimpMessageHeaderAccessor  headerAccessor) {
         String sessionId = headerAccessor.getSessionAttributes().get("sessionId").toString();
         headerAccessor.setSessionId(sessionId);
-        // handle messages ..make service
         messagingTemplate.convertAndSend("/topic/reply","" );
         return message;
     }
