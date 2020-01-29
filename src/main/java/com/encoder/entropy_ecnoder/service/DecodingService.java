@@ -18,7 +18,7 @@ public class DecodingService {
     public DecodingService(){
     }
 
-    public String decodeArtihmetic(EncoderDecoderRequest encoderDecoderRequest){
+    public String decodeArithmetic(EncoderDecoderRequest encoderDecoderRequest){
         ArrayList<Symbol> symbols = this.utils.createSymbolList(encoderDecoderRequest.getSymbolProbabilityPairs());
         String encodedSequence = encoderDecoderRequest.getSequence();
         Symbol symbol = symbols.get(symbols.size()-1) ;

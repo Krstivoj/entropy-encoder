@@ -39,7 +39,7 @@ public class DecoderControler {
 
             return ResponseEntity
                     .created(location)
-                    .body(decodingService.decodeArtihmetic(encoderDecoderRequest));
+                    .body(decodingService.decodeArithmetic(encoderDecoderRequest));
         }
         else {
             return new ResponseEntity(
