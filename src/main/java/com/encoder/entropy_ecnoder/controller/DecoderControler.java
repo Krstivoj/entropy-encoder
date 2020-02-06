@@ -31,7 +31,7 @@ public class DecoderControler {
     DecodingService decodingService;
 
     @PostMapping("/arithmetic")
-    public ResponseEntity<?> arithmeticEncode(@Valid @RequestBody EncoderDecoderRequest encoderDecoderRequest,
+    public ResponseEntity<?> arithmeticDecode(@Valid @RequestBody EncoderDecoderRequest encoderDecoderRequest,
                                               @CurrentUser UserPrincipal currentUser){
         URI location = ServletUriComponentsBuilder
                 .fromCurrentContextPath().path("/arithmetic").build().toUri();
