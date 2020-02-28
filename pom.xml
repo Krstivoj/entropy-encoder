@@ -9,15 +9,15 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.encoder</groupId>
-	<artifactId>entropy_ecnoder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>entropy_ecnoder</name>
+	<artifactId>entropy_app</artifactId>
+	<name>entropy_app</name>
 	<packaging>war</packaging>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
 		<java.version>1.8</java.version>
 		<jjwt.version>0.9.0</jjwt.version>
+		<start-class>com.encoder.entropy_encoder.EntropyEncoderApplication</start-class>
 	</properties>
 
 	<dependencies>
@@ -32,6 +32,7 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>mysql</groupId>
@@ -85,6 +86,12 @@
 			<groupId>commons-fileupload</groupId>
 			<artifactId>commons-fileupload</artifactId>
 			<version>1.3.3</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.0.1</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 	<build>
