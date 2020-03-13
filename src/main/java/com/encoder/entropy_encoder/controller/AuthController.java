@@ -54,7 +54,7 @@ public class AuthController {
     private
     JWTTokenProvider tokenProvider;
 
-    @PostMapping("/signin")
+    @PostMapping("/sign-in")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
         Authentication authentication = authenticationManager.authenticate(
@@ -70,7 +70,7 @@ public class AuthController {
         return ResponseEntity.ok(new JWTAuthenticationResponse(jwt));
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/sign-up")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
         if(userRepository.existsByUsername(signUpRequest.getUsername())) {
             return new ResponseEntity<>(new APIResponse(false, "Username is already taken!"),
@@ -100,7 +100,7 @@ public class AuthController {
 
         return ResponseEntity.created(location).body(new APIResponse(true, "User registered successfully"));
     }
-    @PostMapping("/changepassword")
+    @PutMapping("/password")
     public ResponseEntity<?> updatePassword(@RequestBody Map<String,String> requestParams, @CurrentUser UserPrincipal userPrincipal) {
 
         User user = userRepository.findByUsername(userPrincipal.getUsername()).get();

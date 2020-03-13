@@ -2,17 +2,18 @@ package com.encoder.entropy_encoder;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
-public class EntropyEncoderApplication extends SpringBootServletInitializer {
+@RestController
+public class EntropyEncoderApplication {
+	@GetMapping("/hello")
+	public String greeting(){
+		return "Hello from server";
+	}
 	public static void main(String[] args) {
 		System.setProperty("server.servlet.context-path","/encoder_app");
 		SpringApplication.run(EntropyEncoderApplication.class, args);
-	}
-	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder builder){
-		return builder.sources(EntropyEncoderApplication.class);
 	}
 }
